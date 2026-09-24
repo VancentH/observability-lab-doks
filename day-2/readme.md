@@ -57,7 +57,7 @@ Monitoring is the process of keeping an eye on these metrics over time to unders
 - API clients interact with Prometheus through its HTTP API to fetch data, query metrics, and integrate Prometheus with other systems or custom applications.
 
 # 🛠️  Installation & Configurations
-## 📦 Step 1: Create DOKS Cluster
+## 📦 Step 1: Create DigitalOcean Kubernetes (DOKS) Cluster
 
 ### Prerequisites
 - Create a DigitalOcean account.
@@ -70,6 +70,17 @@ Monitoring is the process of keeping an eye on these metrics over time to unders
 - Run `kubectl get nodes` to verify that you can connect to the cluster.
 
 ```bash
+# DOKS
+doctl kubernetes options regions
+
+doctl kubernetes cluster create observability \
+  --region fra1 \
+  --ha=false \
+  --tag prometheus \
+  --node-pool "name=observability-ng;size=s-2vcpu-4gb;count=2;auto-scale=true;min-nodes=2;max-nodes=3;tag=prometheus" \
+  --wait
+
+# EKS
 eksctl create cluster --name=observability \
                       --region=us-east-1 \
                       --zones=us-east-1a,us-east-1b \
@@ -77,6 +88,9 @@ eksctl create cluster --name=observability \
 ```
 
 ```bash
+# DOKS: It does not provide IAM or IRSA, so this step can be skipped.
+
+# EKS
 eksctl utils associate-iam-oidc-provider \
     --region us-east-1 \
     --cluster observability \
@@ -84,6 +98,9 @@ eksctl utils associate-iam-oidc-provider \
 ```
 
 ```bash
+# DOKS: It is already included in `doctl kubernetes cluster create` and specified with the `--node-pool` parameter.
+
+# EKS
 eksctl create nodegroup --cluster=observability \
                         --region=us-east-1 \
                         --name=observability-ng-private \
@@ -99,7 +116,9 @@ eksctl create nodegroup --cluster=observability \
                         --alb-ingress-access \
                         --node-private-networking
 
-# Update ./kube/config file
+# DOKS: The `--wait` option automatically updates the kubeconfig after the cluster is created.
+
+# EKS: Update ./kube/config file
 aws eks update-kubeconfig --name observability
 ```
 
