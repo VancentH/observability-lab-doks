@@ -57,14 +57,17 @@ Monitoring is the process of keeping an eye on these metrics over time to unders
 - API clients interact with Prometheus through its HTTP API to fetch data, query metrics, and integrate Prometheus with other systems or custom applications.
 
 # 🛠️  Installation & Configurations
-## 📦 Step 1: Create EKS Cluster
+## 📦 Step 1: Create DOKS Cluster
 
 ### Prerequisites
-- Download and Install AWS Cli - Please Refer [this]("https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html") link.
-- Setup and configure AWS CLI using the `aws configure` command.
-- Install and configure eksctl using the steps mentioned [here]("https://eksctl.io/installation/").
-- Install and configure kubectl as mentioned [here]("https://kubernetes.io/docs/tasks/tools/").
-
+- Create a DigitalOcean account.
+- Go to **API → Tokens** and click **Generate New Token**. Enter a name, set **Expiration** to **30 days**, and select **Full Access** under **Scope**. For production environments, use **Custom Scopes** and grant only the required permissions. Copy the token immediately after it is generated, as it is shown only once.
+- Install `doctl` (DigitalOcean CLI) by following the official installation guide.
+- Run `doctl auth init` in the terminal and paste the token when prompted.
+- Run `doctl account get` if your account information is displayed, authentication was successful.
+- Install `kubectl` by following the official Kubernetes documentation.
+- Create a DOKS cluster by following the official guide. Note that for DOKS 1.36.0 and later, high availability (HA) is enabled by default when using `doctl`, which incurs additional cost. For testing purposes, you can disable it with `--ha=false`.
+- Run `kubectl get nodes` to verify that you can connect to the cluster.
 
 ```bash
 eksctl create cluster --name=observability \
@@ -72,12 +75,14 @@ eksctl create cluster --name=observability \
                       --zones=us-east-1a,us-east-1b \
                       --without-nodegroup
 ```
+
 ```bash
 eksctl utils associate-iam-oidc-provider \
     --region us-east-1 \
     --cluster observability \
     --approve
 ```
+
 ```bash
 eksctl create nodegroup --cluster=observability \
                         --region=us-east-1 \
