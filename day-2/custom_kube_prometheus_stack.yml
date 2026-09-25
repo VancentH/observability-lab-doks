@@ -20,3 +20,15 @@ alertmanager:
     # ✅ Solves error: Get rid of namespace matchers when creating AlertManagerConfig (GitHub issue)
     alertmanagerConfigMatcherStrategy:
       type: None
+
+# DOKS runs a fully managed control plane; metrics from these components are not accessible to users
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+
+# kube-proxy is managed by DOKS; its metrics bind to 127.0.0.1 and can't be scraped  
+kubeProxy:
+  enabled: false
