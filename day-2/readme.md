@@ -69,8 +69,9 @@ Monitoring is the process of keeping an eye on these metrics over time to unders
 - Create a DOKS cluster by following the official guide. Note that for DOKS 1.36.0 and later, high availability (HA) is enabled by default when using `doctl`, which incurs additional cost. For testing purposes, you can disable it with `--ha=false`.
 - Run `kubectl get nodes` to verify that you can connect to the cluster.
 
+#### DOKS
+
 ```bash
-# DOKS
 doctl kubernetes options regions
 
 doctl kubernetes cluster create observability \
@@ -79,8 +80,11 @@ doctl kubernetes cluster create observability \
   --tag prometheus \
   --node-pool "name=observability-ng;size=s-2vcpu-4gb;count=2;auto-scale=true;min-nodes=2;max-nodes=3;tag=prometheus" \
   --wait
+```
 
-# EKS
+#### EKS
+
+```bash
 eksctl create cluster --name=observability \
                       --region=us-east-1 \
                       --zones=us-east-1a,us-east-1b \
@@ -88,9 +92,6 @@ eksctl create cluster --name=observability \
 ```
 
 ```bash
-# DOKS: It does not provide IAM or IRSA, so this step can be skipped.
-
-# EKS
 eksctl utils associate-iam-oidc-provider \
     --region us-east-1 \
     --cluster observability \
@@ -98,9 +99,6 @@ eksctl utils associate-iam-oidc-provider \
 ```
 
 ```bash
-# DOKS: It is already included in `doctl kubernetes cluster create` and specified with the `--node-pool` parameter.
-
-# EKS
 eksctl create nodegroup --cluster=observability \
                         --region=us-east-1 \
                         --name=observability-ng-private \
@@ -116,11 +114,17 @@ eksctl create nodegroup --cluster=observability \
                         --alb-ingress-access \
                         --node-private-networking
 
-# DOKS: The `--wait` option automatically updates the kubeconfig after the cluster is created.
-
 # EKS: Update ./kube/config file
 aws eks update-kubeconfig --name observability
 ```
+
+#### Comparison
+
+| EKS Step | DOKS |
+|---|---|
+| `associate-iam-oidc-provider` | DOKS does not provide IAM or IRSA, so this step can be skipped. |
+| `eksctl create nodegroup` | Node pools are created with `doctl kubernetes cluster create` using the `--node-pool` parameter. |
+| `aws eks update-kubeconfig` | The `--wait` option automatically updates the kubeconfig after the cluster is created. |
 
 ### 🧰 Step 2: Install kube-prometheus-stack
 ```bash
@@ -179,7 +183,7 @@ kubectl port-forward service/prometheus-operated -n monitoring 9090:9090
 kubectl port-forward service/alertmanager-operated -n monitoring 9093:9093
 ```
 
-### 🧼 Step 5: Clean UP
+### 🧼 Step 5: Clean Up
 - **Uninstall helm chart**:
 ```bash
 helm uninstall monitoring --namespace monitoring
@@ -189,6 +193,21 @@ helm uninstall monitoring --namespace monitoring
 kubectl delete ns monitoring
 ```
 - **Delete Cluster & everything else**:
-```bash
-eksctl delete cluster --name observability
-```
+  
+  *DOKS:*
+
+  ```bash
+  doctl kubernetes cluster delete observability --dangerous --force
+  ```
+
+  `--dangerous` also deletes the cluster's load balancers, volumes, and volume snapshots. Verify the cluster has been fully removed:
+
+  ```bash
+  doctl kubernetes cluster get observability  # should return "not found"
+  ```
+
+  *EKS:*
+
+  ```bash
+  eksctl delete cluster --name observability
+  ```
