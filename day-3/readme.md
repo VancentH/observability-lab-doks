@@ -61,6 +61,24 @@ container_cpu_usage_seconds_total{namespace="kube-system", endpoint="https-metri
     ```
     - This gives the total increase in container restarts over the last hour.
 
+- **Hands-on: Simulate a Restart**
+
+    - Run a pod that exits with an error so Kubernetes restarts it:
+
+    ```bash
+    kubectl run crashloop-demo \
+      --image=busybox:1.36 \
+      -- /bin/sh -c "echo 'starting...'; sleep 5; echo 'exiting with error'; exit 1"
+    ```
+
+    - Watch the pod go into `CrashLoopBackOff`:
+
+    ```bash
+    kubectl get pod crashloop-demo -w
+    ```
+
+    - Then check the restart count with the `increase()` query above, using `pod="crashloop-demo"` as a label filter.
+
 - **histogram_quantile() Function:**
     - The histogram_quantile() function calculates quantiles (e.g., 95th percentile) from histogram data.
     ```bash
