@@ -203,8 +203,10 @@ kubectl delete ns monitoring
   `--dangerous` also deletes the cluster's load balancers, volumes, and volume snapshots. Verify the cluster has been fully removed:
 
   ```bash
-  doctl kubernetes cluster get observability  # should return "not found"
+  doctl kubernetes cluster get observability
   ```
+  
+  It should return "not found".
 
   *EKS:*
 
