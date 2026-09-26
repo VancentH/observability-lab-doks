@@ -6,6 +6,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
 ## 📅 Overview of Each Day
 
 ### Day 1: Introduction to Observability
+
+- [Go to Day 1](day-1/readme.md)
 - **Concepts Covered**:
   - Introduction to Observability, Monitoring, Logging, and Tracing.
   - The difference between Monitoring and Observability.
@@ -16,6 +18,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
   - Learn why monitoring and observability are crucial in modern IT environments.
 
 ### Day 2: Prometheus - Setting Up Monitoring
+
+- [Go to Day 2](day-2/readme.md)
 - **Concepts Covered**:
   - Introduction to Prometheus and its architecture.
   - Setup and configuration of Prometheus in an EKS cluster.
@@ -26,6 +30,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
   - Learn to install and configure Prometheus on Kubernetes.
 
 ### Day 3: Metrics and PromQL in Prometheus
+
+- [Go to Day 3](day-3/readme.md)
 - **Concepts Covered**:
   - Introduction to PromQL and basic querying techniques.
   - Aggregation and functions in PromQL to analyze metrics data.
