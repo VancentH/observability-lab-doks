@@ -113,9 +113,30 @@ kubectl apply -k kubernetes-manifest/
 
 ## 5) Configure Alertmanager
 - Review the Alertmanager configuration files located in `day-4/alerts-alertmanager-servicemonitor-manifest` but below is the brief overview
+    
+    > The following section covers email alerts. Since [DOKS blocks SMTP access](https://www.digitalocean.com/community/questions/please-unblock-outgoing-smtp-ports-587-and-465-for-transactional-email-usage), I'll use Discord alerts instead (see below).
     - Before configuring Alertmanager, we need credentials to send emails. For this project, we are using Gmail, but any SMTP provider like AWS SES can be used. so please grab the credentials for that.
     - Open your Google account settings and search App password & create a new password & put the password in `day-4/alerts-alertmanager-servicemonitor-manifest/email-secret.yml`
     - One last thing, please add your email id in the `day-4/alerts-alertmanager-servicemonitor-manifest/alertmanagerconfig.yml`
+    
+- Discord
+    - Create a Discord webhook:
+        1. Open Discord and create a new server (or use an existing one).
+        2. Create a text channel for alerts.
+        3. Hover over the channel, click **Edit Channel**, then go to **Integrations**, select **Webhooks**, and click **New Webhook**.
+        4. Give the webhook a name, then click **Copy Webhook URL**.
+    - Paste the webhook URL into `day-4/alerts-alertmanager-servicemonitor-manifest/discord-secrets.yml`.
+    - Update the `day-4/alerts-alertmanager-servicemonitor-manifest/alertmangerconfig.yml` file to use the Discord webhook URL.
+        ```yaml
+        receivers:
+        - name: 'send-discord'
+          discordConfigs:
+          - apiURL:
+              name: discord-webhook
+              key: url
+            sendResolved: false
+        ```
+
 - **HighCpuUsage**: Triggers a warning alert if the average CPU usage across instances exceeds 50% for more than 5 minutes.
 - **PodRestart**: Triggers a critical alert immediately if any pod restarts more than 2 times.
 - Apply the manifest files to your cluster by running:
@@ -129,7 +150,9 @@ kubectl apply -k alerts-alertmanager-servicemonitor-manifest/
     - `node_gauge_example`: gauge for tracking async task duration
 
 ## 6) Testing Alerts
-- To test the alerting system, manually crash the container more than 2 times to trigger an alert (email notification).
+- To test the alerting system, manually crash the container more than 2 times to trigger an alert (Discord notification).
 - To crash the application container, hit the following endpoint
 - `<<LOAD_BALANCER_DNS_NAME>>/crash`
-- You should receive an email once the application container has restarted at least 3 times.
+- You should receive a notification in your Discord channel once the application container has restarted at least 3 times.
+
+![Discord alert notification](images/discord-alert-notification.jpg)

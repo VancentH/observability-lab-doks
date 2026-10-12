@@ -16,7 +16,7 @@ spec:
         app: service-a-deployment
     spec:
       containers:
-      - image: abhishekf5/demoservice-a:v
+      - image: hyde31456/demoservice-a:0.1.0
         name: service-a
         imagePullPolicy: Always
         ports:

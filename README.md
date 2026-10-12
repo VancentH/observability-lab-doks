@@ -39,6 +39,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
   - Master the Prometheus Query Language (PromQL) for querying and analyzing metrics.
 
 ### Day 4: Instrumentation and Custom Metrics
+
+- [Go to Day 4](day-4/readme.md)
 - **Concepts Covered**:
   - Instrumentation for adding monitoring capabilities to applications.
   - Understanding different types of metrics in Prometheus: Counter, Gauge, Histogram, and Summary.

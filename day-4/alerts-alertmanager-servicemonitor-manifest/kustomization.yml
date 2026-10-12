@@ -3,6 +3,6 @@ kind: Kustomization
 namespace: monitoring
 resources:
   - alerts.yml
-  - email-secrets.yml
+  - discord-secrets.yml
   - alertmangerconfig.yml
   - serviceMonitor.yml
