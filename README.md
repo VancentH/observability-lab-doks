@@ -53,6 +53,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
   - Understand how to work with different types of metrics in Prometheus.
 
 ### Day 5: Logging with EFK Stack
+
+- [Go to Day 5](day-5/readme.md)
 - **Concepts Covered**:
   - Introduction to logging in distributed systems and Kubernetes.
   - Setting up the EFK stack (Elasticsearch, Fluentbit, Kibana) on Kubernetes.

@@ -26,7 +26,71 @@
 
 ## 📝 Step-by-Step Setup
 
-### 1) Create IAM Role for Service Account
+### DOKS
+
+#### 1) Verify the Default StorageClass in DOKS
+
+```bash
+kubectl get storageclass
+```
+
+The command should return `do-block-storage`, usually marked as (default). DOKS does not require installing a CSI driver or create an IAM role. This step simply verifies that the StorageClass exists.
+
+Skip directly to the **Create Namespace for Logging** step.
+
+#### 2) Create Namespace for Logging
+```bash
+kubectl create namespace logging
+```
+
+#### 3) Install Elasticsearch on K8s
+
+```bash
+helm repo add elastic https://helm.elastic.co
+
+helm install elasticsearch \
+ --set replicas=1 \
+ --set volumeClaimTemplate.storageClassName=do-block-storage \
+ --set persistence.labels.enabled=true elastic/elasticsearch -n logging
+```
+
+- Installs Elasticsearch in the logging namespace.
+- Sets the number of replicas, specifies the StorageClass, and enables persistent storage to ensure data is stored on persistent volumes.
+- The only difference from the AWS version is that storageClassName is changed from `gp2` to DigitalOcean's `do-block-storage`.
+
+#### 4) Retrieve Elasticsearch Username & Password
+```bash
+# for username
+kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.username}' | base64 -d
+# for password
+kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.password}' | base64 -d
+```
+- Retrieves the password for the Elasticsearch cluster's master credentials from the Kubernetes secret.
+- The password is base64 encoded, so it needs to be decoded before use.
+- 👉 **Note**: Please write down the password for future reference
+
+#### 5) Install Kibana
+```bash
+helm install kibana --set service.type=LoadBalancer elastic/kibana -n logging
+```
+- Kibana provides a user-friendly interface for exploring and visualizing data stored in Elasticsearch.
+- It is exposed as a LoadBalancer service, making it accessible from outside the cluster.
+- When a Service with `type: LoadBalancer` is created, the built-in DigitalOcean Cloud Controller Manager automatically provisions a DigitalOcean Load Balancer and assigns it a public IP address by default.
+
+#### 6) Install Fluentbit with Custom Values/Configurations
+- 👉 **Note**: Please update the `HTTP_Passwd` field in the `fluentbit-values.yml` file with the password retrieved earlier in step 4: (i.e NJyO47UqeYBsoaEU)"
+```bash
+helm repo add fluent https://fluent.github.io/helm-charts
+helm install fluent-bit fluent/fluent-bit -f fluentbit-values.yaml -n logging
+```
+
+---
+
+### AWS EKS
+
+> Steps 1–3 (creating an IAM role, retrieving the ARN, and installing the EBS CSI Driver) are specific to EKS. It does not include the EBS CSI Driver by default, so it must be installed and authorized separately. DOKS comes with a built-in CSI driver and the `do-block-storage` StorageClass.
+
+#### 1) Create IAM Role for Service Account
 ```bash
 eksctl create iamserviceaccount \
     --name ebs-csi-controller-sa \
@@ -41,13 +105,13 @@ eksctl create iamserviceaccount \
 - IAM role allows EBS CSI controller to interact with AWS resources, specifically for managing EBS volumes in the Kubernetes cluster.
 - We will attach the Role with service account
 
-### 2) Retrieve IAM Role ARN
+#### 2) Retrieve IAM Role ARN
 ```bash
 ARN=$(aws iam get-role --role-name AmazonEKS_EBS_CSI_DriverRole --query 'Role.Arn' --output text)
 ```
 - Command retrieves the ARN of the IAM role created for the EBS CSI controller service account.
 
-### 3) Deploy EBS CSI Driver
+#### 3) Deploy EBS CSI Driver
 ```bash
 eksctl create addon --cluster observability --name aws-ebs-csi-driver --version latest \
     --service-account-role-arn $ARN --force
@@ -55,12 +119,12 @@ eksctl create addon --cluster observability --name aws-ebs-csi-driver --version 
 - Above command deploys the AWS EBS CSI driver as an addon to your Kubernetes cluster.
 - It uses the previously created IAM service account role to allow the driver to manage EBS volumes securely.
 
-### 4) Create Namespace for Logging
+#### 4) Create Namespace for Logging
 ```bash
 kubectl create namespace logging
 ```
 
-### 5) Install Elasticsearch on K8s
+#### 5) Install Elasticsearch on K8s
 
 ```bash
 helm repo add elastic https://helm.elastic.co
@@ -74,7 +138,7 @@ helm install elasticsearch \
 - It sets the number of replicas, specifies the storage class, and enables persistence labels to ensure
 data is stored on persistent volumes.
 
-### 6) Retrieve Elasticsearch Username & Password
+#### 6) Retrieve Elasticsearch Username & Password
 ```bash
 # for username
 kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonpath='{.data.username}' | base64 -d
@@ -85,14 +149,14 @@ kubectl get secrets --namespace=logging elasticsearch-master-credentials -ojsonp
 - The password is base64 encoded, so it needs to be decoded before use.
 - 👉 **Note**: Please write down the password for future reference
 
-### 7) Install Kibana
+#### 7) Install Kibana
 ```bash
 helm install kibana --set service.type=LoadBalancer elastic/kibana -n logging
 ```
 - Kibana provides a user-friendly interface for exploring and visualizing data stored in Elasticsearch.
 - It is exposed as a LoadBalancer service, making it accessible from outside the cluster.
 
-### 8) Install Fluentbit with Custom Values/Configurations
+#### 8) Install Fluentbit with Custom Values/Configurations
 - 👉 **Note**: Please update the `HTTP_Passwd` field in the `fluentbit-values.yml` file with the password retrieved earlier in step 6: (i.e NJyO47UqeYBsoaEU)"
 ```bash
 helm repo add fluent https://fluent.github.io/helm-charts
@@ -100,17 +164,16 @@ helm install fluent-bit fluent/fluent-bit -f fluentbit-values.yaml -n logging
 ```
 
 ## ✅ Conclusion
+
 - We have successfully installed the EFK stack in our Kubernetes cluster, which includes Elasticsearch for storing logs, Fluentbit for collecting and forwarding logs, and Kibana for visualizing logs.
 - To verify the setup, access the Kibana dashboard by entering the `LoadBalancer DNS name followed by :5601 in your browser.
-    - `http://LOAD_BALANCER_DNS_NAME:5601`
+- `http://LOAD_BALANCER_DNS_NAME:5601`
 - Use the username and password retrieved in step 6 to log in.
 - Once logged in, create a new data view in Kibana and explore the logs collected from your Kubernetes cluster.
 
-
-
 ## 🧼 Clean Up
-```bash
 
+```bash
 helm uninstall monitoring -n monitoring
 
 helm uninstall fluent-bit -n logging
@@ -124,8 +187,16 @@ cd day-4
 kubectl delete -k kubernetes-manifest/
 
 kubectl delete -k alerts-alertmanager-servicemonitor-manifest/
+```
 
+### DOKS
 
+```bash
+doctl kubernetes cluster delete <cluster-name-or-id> --dangerous --force
+```
+
+### AWS EKS
+
+```bash
 eksctl delete cluster --name observability
-
 ```
