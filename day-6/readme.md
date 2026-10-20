@@ -109,6 +109,9 @@ kubectl delete -k kubernetes-manifest/
 
 kubectl delete -k alerts-alertmanager-servicemonitor-manifest/
 
-# Delete cluster
+# DOKS: Delete cluster
+doctl kubernetes cluster delete observability --dangerous --force
+
+# EKS: Delete cluster
 eksctl delete cluster --name observability
 ```
