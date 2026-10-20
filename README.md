@@ -64,6 +64,8 @@ Welcome to the 7-Day Observability Tutorial Series! This repository contains the
   - Understand the importance of logging and how to set up
 
 ### Day 6: Distributed Tracing with Jaeger
+
+- [Go to Day 6](day-6/readme.md)
 - **Concepts Covered**:
   - Introduction to Jaeger and its architecture for distributed tracing.
   - Setting up Jaeger in a Kubernetes cluster using Helm.

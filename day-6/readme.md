@@ -59,6 +59,9 @@ kubectl create configmap jaeger-tls --from-file=ca-cert.pem -n tracing
 ```bash
 kubectl create secret generic es-tls-secret --from-file=ca-cert.pem -n tracing
 ```
+
+- **Note**: `es-tls-secret` is created here but not used in any later step.
+
 ### Step 7: Add Jaeger Helm Repository
 - adds the official Jaeger Helm chart repository to your Helm setup, making it available for installations.
 ```bash
@@ -68,21 +71,30 @@ helm repo update
 ```
 
 ### Step 8: Install Jaeger with Custom Values
-- 👉 **Note**: Please update the `password` field and other related field in the `jaeger-values.yaml` file with the password retrieved earlier in day-4 at step 6: (i.e NJyO47UqeYBsoaEU)"
--  Command installs Jaeger into the tracing namespace using a custom jaeger-values.yaml configuration file. Ensure the password is updated in the file before installation.
+
+- 👉 **Note**: Please update the `password` field and other related field in the `jaeger-values.yaml` file with the password retrieved earlier in day-5 at step 6: (i.e NJyO47UqeYBsoaEU)"
+- Command installs Jaeger into the tracing namespace using a custom jaeger-values.yaml configuration file. Ensure the password is updated in the file before installation.
+
+- ⚠️ **Jaeger v1 → v2 architecture change**: `helm install jaeger jaegertracing/jaeger` with no version pinned installs the latest chart, which now defaults to Jaeger v2, an OpenTelemetry Collector-based architecture. The old `jaeger-values.yaml` was written for Jaeger v1 and used fields like `storage.elasticsearch.*`, `query.cmdlineParams`, and `extraConfigmapMounts`. The v2 chart silently ignores all of these fields: no error is thrown, but the Elasticsearch connection, TLS, and password settings never take effect.
+  - v2 instead takes a full OTel Collector pipeline via the `userconfig` field, with `receivers` (e.g. OTLP, plus the legacy Jaeger Thrift protocol on port 14268 for compatibility with day-4's service-a/service-b), `exporters`, and `extensions` (e.g. `jaeger_storage`, `jaeger_query`).
+  - `jaeger-values.yaml` in this repo has been rewritten for the v2 architecture. The Elasticsearch host, credentials, and TLS cert path now live under `userconfig.extensions.jaeger_storage.backends.primary_store.elasticsearch`. Update the password there before installing, not under the old `storage.elasticsearch.password`.
+
 ```bash
 helm install jaeger jaegertracing/jaeger -n tracing --values jaeger-values.yaml
 ```
-### Step 9: Port Forward Jaeger Query Service
-- Command forwards port 8080 on your local machine to the Jaeger Query service, allowing you to access the Jaeger UI locally.
-```bash
-kubectl port-forward svc/jaeger-query 8080:80 -n tracing
 
+### Step 9: Port Forward Jaeger Query Service
+
+- Command forwards port 8080 on your local machine to the Jaeger Query service, allowing you to access the Jaeger UI locally.
+
+```bash
+# Jaeger v2 renamed the service and changed its port
+kubectl port-forward svc/jaeger 8080:16686 -n tracing
 ```
 
 ## 🧼 Clean Up
-```bash
 
+```bash
 helm uninstall jaeger -n tracing
 
 helm uninstall elasticsearch -n logging
@@ -99,6 +111,4 @@ kubectl delete -k alerts-alertmanager-servicemonitor-manifest/
 
 # Delete cluster
 eksctl delete cluster --name observability
-
 ```
-
