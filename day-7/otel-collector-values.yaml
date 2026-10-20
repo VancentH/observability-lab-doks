@@ -23,7 +23,7 @@ config:
     #   insecure: true
 
     otlp:
-      endpoint: "jaeger-collector.olly:4317"  # Update as per your Jaeger service
+      endpoint: "jaeger.olly:4317"  # Jaeger v2 is a single all-in-one service named after the release ("jaeger"), not "jaeger-collector" (v1)
       tls:
         insecure: true
     debug:
